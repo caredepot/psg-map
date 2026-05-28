@@ -426,14 +426,9 @@ function addHospital() {
       rebuildMarkers();
       setupSidebar();
       render(null, null);
-      alert(`"${name}" 추가됨!
-위치: 위도 ${h.lat.toFixed(4)}, 경도 ${h.lng.toFixed(4)}
-
-작업 끝나면 'JSON 다운로드' 버튼 클릭 후 깃허브에 업로드 잊지마세요.`);
+      alert(`"${name}" 추가됨!\n위치: 위도 ${h.lat.toFixed(4)}, 경도 ${h.lng.toFixed(4)}\n\n작업 끝나면 'JSON 다운로드' 버튼 클릭 후 깃허브에 업로드 잊지마세요.`);
     } else {
-      alert('주소를 좌표로 변환하지 못했습니다.
-주소를 다시 확인해주세요.
-예: "서울특별시 강남구 테헤란로 123"');
+      alert('주소를 좌표로 변환하지 못했습니다.\n주소를 다시 확인해주세요.\n예: "서울특별시 강남구 테헤란로 123"');
     }
   });
 }
@@ -478,15 +473,7 @@ function downloadJSON() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  alert(`our_hospitals.json (${ourHospitals.length}개) 다운로드 완료!
-
-다음 단계:
-1. 깃허브 저장소 (caredepot/psg-map) 접속
-2. 기존 our_hospitals.json 파일 클릭
-3. 연필 아이콘 → 내용 지우고 새 파일 내용 붙여넣기
-   또는 Add file → Upload files로 드래그&드롭
-4. Commit 클릭
-5. 1~2분 후 일반 URL에 반영됨`);
+  alert(`our_hospitals.json (${ourHospitals.length}개) 다운로드 완료!\n\n다음 단계:\n1. 깃허브 저장소 (caredepot/psg-map) 접속\n2. 기존 our_hospitals.json 파일 클릭\n3. 연필 아이콘 → 내용 지우고 새 파일 내용 붙여넣기\n   또는 Add file → Upload files로 드래그&드롭\n4. Commit 클릭\n5. 1~2분 후 일반 URL에 반영됨`);
 }
 
 document.getElementById('search').addEventListener('input', e => {
