@@ -21,7 +21,11 @@ button, input, textarea { font-family: inherit; }
 .search { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.15); }
 .search input { width: 100%; padding: 9px 12px; border: none; border-radius: 6px; font-size: 14px; }
 .sido-section { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.sido-name { font-size: 13px; font-weight: 700; padding: 6px 16px; color: #B4D4F7; }
+.sido-name { font-size: 13px; font-weight: 700; padding: 6px 16px; color: #B4D4F7; cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none; }
+.sido-name:hover { background: rgba(255,255,255,0.08); }
+.sido-arrow { display: inline-block; font-size: 10px; transition: transform .15s; }
+.sido-section:not(.collapsed) .sido-arrow { transform: rotate(90deg); }
+.sido-section.collapsed .sgg-item { display: none; }
 .sgg-item { padding: 10px 16px 10px 24px; cursor: pointer; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
 .sgg-item:hover { background: rgba(255,255,255,0.1); }
 .sgg-item.active { background: #2E75B6; }
@@ -135,9 +139,8 @@ button, input, textarea { font-family: inherit; }
       </div>
     </div>
     <div class="filter-bar">
-      <button class="on" data-flt="all" onclick="setFilter('all')">전체</button>
-      <button class="our" data-flt="our" onclick="setFilter('our')">우리 관리</button>
-      <button data-flt="hira" onclick="setFilter('hira')">심평원만</button>
+      <button class="on" data-flt="hira" onclick="setFilter('hira')">심평원 등록 병원</button>
+      <button class="our" data-flt="our" onclick="setFilter('our')">케어디포 관리 병원</button>
     </div>
     <div class="search"><input type="text" id="search" placeholder="병원명/주소 검색..."></div>
     <div class="show-all" onclick="showAll()">전체 보기</div>
@@ -186,7 +189,7 @@ if (typeof kakao === 'undefined') {
 
 let map, cluster, geocoder;
 const ms = [];
-let currentFilter = 'all';
+let currentFilter = 'hira';
 
 async function loadOurHospitals() {
   // 1. localStorage에서 (관리자 작업 중인 임시 데이터)
@@ -270,8 +273,7 @@ function getAllRecords() {
 function getFilteredRecords() {
   const all = getAllRecords();
   if (currentFilter === 'our') return all.filter(r => r.our);
-  if (currentFilter === 'hira') return all.filter(r => !r.our);
-  return all;
+  return all.filter(r => !r.our); // 심평원 등록 병원
 }
 
 function initMap() {
@@ -345,8 +347,12 @@ function setupSidebar() {
     const total = items.reduce((a,b) => a + (b.c || 0), 0);
     const ourTotal = items.reduce((a,b) => a + (b.ourCount || 0), 0);
     const sec = document.createElement('div');
-    sec.className = 'sido-section';
-    sec.innerHTML = `<div class="sido-name">${sido} (${total}${ourTotal > 0 ? ` · 관리 ${ourTotal}` : ''})</div>`;
+    sec.className = 'sido-section collapsed';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'sido-name';
+    nameEl.innerHTML = `<span class="sido-arrow">▶</span><span>${sido} (${total}${ourTotal > 0 ? ` · 관리 ${ourTotal}` : ''})</span>`;
+    nameEl.onclick = () => sec.classList.toggle('collapsed');
+    sec.appendChild(nameEl);
     items.forEach(s => {
       const it = document.createElement('div');
       it.className = 'sgg-item';
@@ -376,7 +382,11 @@ function clearActive() {
 
 function selectSgg(s) {
   clearActive();
-  document.querySelectorAll(`.sgg-item[data-key="${s.s} ${s.g}"]`).forEach(e => e.classList.add('active'));
+  document.querySelectorAll(`.sgg-item[data-key="${s.s} ${s.g}"]`).forEach(e => {
+    e.classList.add('active');
+    const sec = e.closest('.sido-section');
+    if (sec) sec.classList.remove('collapsed');
+  });
   if (map) { map.setCenter(new kakao.maps.LatLng(s.lat, s.lng)); map.setLevel(5); }
   render(s.s, s.g);
   if (isMobile()) { closeAll(); setTimeout(() => toggleDt(), 200); }
