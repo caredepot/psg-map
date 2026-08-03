@@ -34,6 +34,8 @@ button, input, textarea { font-family: inherit; }
 .sgg-item .cnt.our { background: #d32f2f; }
 .show-all { padding: 12px 16px; font-size: 14px; cursor: pointer; background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.15); }
 .show-all:hover { background: rgba(255,255,255,0.15); }
+.excel-dl-btn { padding: 10px 16px; font-size: 13px; cursor: pointer; background: rgba(0,155,72,0.25); color: #fff; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: center; font-weight: 600; }
+.excel-dl-btn:hover { background: rgba(0,155,72,0.4); }
 #map { width: 100%; height: 100%; }
 .detail { background: #f7f7f9; overflow-y: auto; -webkit-overflow-scrolling: touch; border-left: 1px solid #ddd; }
 .detail-header { padding: 14px 16px; background: #2E75B6; color: #fff; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -144,6 +146,7 @@ button, input, textarea { font-family: inherit; }
     </div>
     <div class="search"><input type="text" id="search" placeholder="병원명/주소 검색..."></div>
     <div class="show-all" onclick="showAll()">전체 보기</div>
+    <div class="excel-dl-btn" onclick="downloadHospitalExcel()">📊 엑셀 다운로드 (전체·서울·경기·인천)</div>
     <div id="sgg-list"></div>
   </div>
   <div id="map"></div>
@@ -274,6 +277,55 @@ function getFilteredRecords() {
   const all = getAllRecords();
   if (currentFilter === 'our') return all.filter(r => r.our);
   return all.filter(r => !r.our); // 심평원 등록 병원
+}
+
+/* ═══════════════════════════════════════════════════════════
+   엑셀 다운로드 — 전체 / 서울 / 경기 / 인천 4개 시트, 인쇄하기 좋은 가로 레이아웃
+   ═══════════════════════════════════════════════════════════ */
+function downloadHospitalExcel() {
+  if (typeof XLSX === 'undefined') { alert('엑셀 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.'); return; }
+  const all = getAllRecords();
+  const sortRecs = arr => arr.slice().sort((a, b) =>
+    (a.s || '').localeCompare(b.s || '') ||
+    (a.g || '').localeCompare(b.g || '') ||
+    (a.n || '').localeCompare(b.n || '')
+  );
+
+  const scopes = [
+    { name: '전체', test: () => true },
+    { name: '서울', test: r => r.s === '서울특별시' },
+    { name: '경기', test: r => r.s === '경기도' },
+    { name: '인천', test: r => r.s === '인천광역시' }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const header = ['No', '시도', '시군구', '기관명', '구분', '전화번호', '주소', '비고'];
+
+  scopes.forEach(scope => {
+    const recs = sortRecs(all.filter(scope.test));
+    const rows = recs.map((r, i) => [
+      i + 1, r.s || '', r.g || '', r.n || '', r.k || '', r.t || '', r.a || '', r.our ? '케어디포 관리' : ''
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+
+    // 인쇄했을 때 보기 좋도록 열 너비 지정
+    ws['!cols'] = [
+      { wch: 5 }, { wch: 10 }, { wch: 10 }, { wch: 26 },
+      { wch: 10 }, { wch: 15 }, { wch: 44 }, { wch: 14 }
+    ];
+    // 헤더행 고정
+    ws['!views'] = [{ state: 'frozen', ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' }];
+    // 인쇄 설정: A4 가로, 폭에 맞춤 (글씨는 기본 11pt 유지되어 너무 작지 않음)
+    ws['!pageSetup'] = { orientation: 'landscape', paperSize: 9, fitToWidth: 1, fitToHeight: 0 };
+    ws['!margins'] = { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 };
+    ws['!autofilter'] = { ref: 'A1:H' + (rows.length + 1) };
+
+    XLSX.utils.book_append_sheet(wb, ws, scope.name);
+  });
+
+  const today = new Date();
+  const ymd = today.getFullYear() + String(today.getMonth() + 1).padStart(2, '0') + String(today.getDate()).padStart(2, '0');
+  XLSX.writeFile(wb, `수면검사기관_${ymd}.xlsx`);
 }
 
 function initMap() {
