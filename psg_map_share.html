@@ -36,6 +36,41 @@ button, input, textarea { font-family: inherit; }
 .show-all:hover { background: rgba(255,255,255,0.15); }
 .excel-dl-btn { padding: 10px 16px; font-size: 13px; cursor: pointer; background: rgba(0,155,72,0.25); color: #fff; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: center; font-weight: 600; }
 .excel-dl-btn:hover { background: rgba(0,155,72,0.4); }
+
+/* 상단 모드 전환 탭 (PSG 기관 / 건강검진기관) */
+.top-mode-tabs { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.15); display: flex; gap: 4px; }
+.top-mode-tabs button { flex: 1; padding: 8px 4px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600; }
+.top-mode-tabs button.on { background: #00838f; border-color: #00838f; color: #fff; }
+
+/* 건강검진기관 전체화면 패널 */
+#chk-panel { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 2000; overflow-y: auto; }
+#chk-panel.open { display: block; }
+.chk-header { background: #1F4E78; color: #fff; padding: 14px 16px; position: sticky; top: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.chk-header h2 { font-size: 16px; margin: 0; }
+.chk-header .chk-sub { font-size: 12px; color: #B4D4F7; font-weight: 400; margin-left: 8px; }
+.chk-back-btn { background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.chk-toolbar { padding: 12px 16px; border-bottom: 1px solid #E5E8EB; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: #F9FAFB; }
+.chk-region-tabs { display: flex; gap: 4px; }
+.chk-region-tabs button { padding: 7px 14px; font-size: 13px; border: 1px solid #CCE0FF; background: #fff; color: #3182F6; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.chk-region-tabs button.on { background: #3182F6; color: #fff; }
+.chk-type-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chk-type-chip { padding: 6px 12px; font-size: 12px; border: 1px solid #ddd; background: #fff; border-radius: 14px; cursor: pointer; color: #4E5968; }
+.chk-type-chip.on { background: #00838f; color: #fff; border-color: #00838f; }
+.chk-search-box { flex: 1; min-width: 160px; }
+.chk-search-box input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+.chk-excel-btn { padding: 8px 14px; font-size: 13px; background: #00B140; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.chk-count-bar { padding: 8px 16px; font-size: 12px; color: #70737C; background: #fff; border-bottom: 1px solid #eee; }
+.chk-table-wrap { padding: 0 16px 24px; }
+.chk-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+.chk-table th { background: #F7F7F8; color: #70737C; font-weight: 700; padding: 8px 10px; text-align: left; border-bottom: 2px solid #E5E8EB; position: sticky; top: 0; }
+.chk-table td { padding: 8px 10px; border-bottom: 1px solid #F0F0F0; }
+.chk-table tr:hover td { background: #FAFBFC; }
+.chk-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; background: #E8F8EE; color: #00834E; margin: 1px 2px 1px 0; }
+.chk-admin-box { margin: 16px; padding: 14px; border: 1px solid #CCE0FF; background: #EBF3FF; border-radius: 10px; }
+.chk-admin-box h3 { margin: 0 0 8px; font-size: 14px; color: #1565c0; }
+.chk-admin-box input[type=file] { padding: 6px; }
+.chk-admin-box button { padding: 8px 14px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 8px; }
+.chk-empty { padding: 40px 16px; text-align: center; color: #999; }
 #map { width: 100%; height: 100%; }
 .detail { background: #f7f7f9; overflow-y: auto; -webkit-overflow-scrolling: touch; border-left: 1px solid #ddd; }
 .detail-header { padding: 14px 16px; background: #2E75B6; color: #fff; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -103,6 +138,10 @@ button, input, textarea { font-family: inherit; }
       <span>지도 메뉴<small id="sb-sub">심평원 + 관리병원</small></span>
       <button class="close-btn" onclick="toggleSb()">×</button>
     </h1>
+    <div class="top-mode-tabs">
+      <button class="on" data-mode="map" onclick="setTopMode('map')">🗺️ PSG 기관</button>
+      <button data-mode="chk" onclick="setTopMode('chk')">🩺 건강검진기관</button>
+    </div>
     <div id="admin-section" style="display:none">
       <div class="admin-panel" style="border-bottom-color:#1565c0">
         <h3 style="color:#1565c0">심평원 목록 업데이트 (수도권)</h3>
@@ -157,6 +196,41 @@ button, input, textarea { font-family: inherit; }
     </div>
     <div id="hl"></div>
   </div>
+</div>
+<div id="chk-panel">
+  <div class="chk-header">
+    <div>
+      <h2 style="display:inline">🩺 건강검진기관<span class="chk-sub" id="chk-sub"></span></h2>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="chk-excel-btn" onclick="downloadChkExcel()">📊 엑셀 다운로드</button>
+      <button class="chk-back-btn" onclick="setTopMode('map')">🗺️ 지도로 돌아가기</button>
+    </div>
+  </div>
+  <div id="chk-admin-box" class="chk-admin-box" style="display:none">
+    <h3>건강검진기관 데이터 업데이트 (수도권)</h3>
+    <div style="font-size:12px;color:#333;margin-bottom:8px">
+      국민건강보험공단 "검진기관별 검진유형내역" CSV를 올리면 서울·경기·인천만 자동으로 골라 반영합니다 (주소가 없는 데이터라 지도 핀 없이 목록으로만 제공돼요).
+    </div>
+    <input type="file" id="chk-file" accept=".csv">
+    <button style="background:#1565c0;color:#fff" onclick="processChkCsv()">CSV 처리 시작</button>
+    <button id="chk-dl-json" style="background:#1565c0;color:#fff;display:none" onclick="downloadChkJSON()">checkup_centers.json 다운로드</button>
+    <div style="font-size:12px;color:#555;margin-top:8px">
+      처리 후 JSON을 깃허브에 <code>checkup_centers.json</code>으로 올리면 1~2분 후 반영됩니다.
+    </div>
+  </div>
+  <div class="chk-toolbar">
+    <div class="chk-region-tabs" id="chk-region-tabs">
+      <button class="on" data-r="all" onclick="setChkRegion('all')">전체</button>
+      <button data-r="서울특별시" onclick="setChkRegion('서울특별시')">서울</button>
+      <button data-r="경기도" onclick="setChkRegion('경기도')">경기</button>
+      <button data-r="인천광역시" onclick="setChkRegion('인천광역시')">인천</button>
+    </div>
+    <div class="chk-type-chips" id="chk-type-chips"></div>
+    <div class="chk-search-box"><input type="text" id="chk-search" placeholder="기관명 검색..." oninput="renderChkList()"></div>
+  </div>
+  <div class="chk-count-bar" id="chk-count-bar"></div>
+  <div class="chk-table-wrap" id="chk-table-wrap"></div>
 </div>
 <div class="mobile-bar">
   <button class="mobile-btn" onclick="toggleSb()">≡ 지역 선택</button>
@@ -234,14 +308,18 @@ async function loadHiraHospitals() {
 async function start() {
   await loadHiraHospitals();
   await loadOurHospitals();
+  await loadCheckupCenters();
   initMap();
   const sub = document.getElementById('sb-sub');
   if (isAdmin) {
     document.getElementById('admin-section').style.display = 'block';
+    document.getElementById('chk-admin-box').style.display = 'block';
     sub.textContent = '관리자 모드 활성';
   } else if (D.updated) {
     sub.textContent = D.updated + ' 업데이트 기준';
   }
+  renderChkTypeChips();
+  renderChkList();
 }
 
 function parseAddress(addr) {
@@ -708,6 +786,198 @@ async function processHiraExcel() {
   } else {
     alert(`처리 완료!\n\n· 수도권 ${out.length}개 전부 좌표 확보\n\n"hira_hospitals.json 다운로드"를 눌러 저장 후 깃허브에 올려주세요.`);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   건강검진기관 (국민건강보험공단_검진기관별 검진유형내역)
+   — 주소가 없는 데이터라 지도 핀 없이 "필터 가능한 목록"으로 제공
+   ═══════════════════════════════════════════════════════════ */
+const CHK_TYPES = ['일반', '영유아', '구강', '위암', '대장암', '간암', '유방암', '자궁경부암', '폐암'];
+let CHK = null;           // {updated, r:[{n,k,s,g,types:{일반:'내원',...}}]}
+let chkResult = null;     // 관리자 CSV 처리 결과(다운로드 대기중인 JSON)
+let chkRegion = 'all';    // 'all' | '서울특별시' | '경기도' | '인천광역시'
+let chkTypeFilter = null; // null(전체) 또는 CHK_TYPES 중 하나
+
+async function loadCheckupCenters() {
+  try {
+    const res = await fetch('checkup_centers.json?t=' + Date.now());
+    if (res.ok) {
+      const json = await res.json();
+      if (json && Array.isArray(json.r)) CHK = json;
+    }
+  } catch (e) {
+    console.warn('checkup_centers.json not found');
+  }
+}
+
+function setTopMode(mode) {
+  document.querySelectorAll('.top-mode-tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  document.getElementById('chk-panel').classList.toggle('open', mode === 'chk');
+  if (mode === 'chk') renderChkList();
+}
+
+function renderChkTypeChips() {
+  const box = document.getElementById('chk-type-chips');
+  let html = `<div class="chk-type-chip on" data-t="__all__" onclick="setChkType(null)">전체유형</div>`;
+  html += CHK_TYPES.map(t => `<div class="chk-type-chip" data-t="${t}" onclick="setChkType('${t}')">${t}</div>`).join('');
+  box.innerHTML = html;
+}
+
+function setChkRegion(r) {
+  chkRegion = r;
+  document.querySelectorAll('#chk-region-tabs button').forEach(b => b.classList.toggle('on', b.dataset.r === r));
+  renderChkList();
+}
+
+function setChkType(t) {
+  chkTypeFilter = t;
+  document.querySelectorAll('.chk-type-chip').forEach(el => {
+    el.classList.toggle('on', (t === null && el.dataset.t === '__all__') || el.dataset.t === t);
+  });
+  renderChkList();
+}
+
+function getChkFiltered() {
+  if (!CHK || !CHK.r) return [];
+  const kw = (document.getElementById('chk-search')?.value || '').trim();
+  return CHK.r.filter(r => {
+    if (chkRegion !== 'all' && r.s !== chkRegion) return false;
+    if (chkTypeFilter && !(r.types && r.types[chkTypeFilter])) return false;
+    if (kw && !r.n.includes(kw)) return false;
+    return true;
+  });
+}
+
+function renderChkList() {
+  const wrap = document.getElementById('chk-table-wrap');
+  const countBar = document.getElementById('chk-count-bar');
+  const sub = document.getElementById('chk-sub');
+  if (!CHK || !CHK.r || !CHK.r.length) {
+    wrap.innerHTML = `<div class="chk-empty">아직 건강검진기관 데이터가 없습니다.${isAdmin ? ' 위 관리자 박스에서 CSV를 업로드해주세요.' : ''}</div>`;
+    countBar.textContent = '';
+    if (sub) sub.textContent = '';
+    return;
+  }
+  if (sub) sub.textContent = CHK.updated ? `${CHK.updated} 업데이트 기준` : '';
+  const list = getChkFiltered();
+  countBar.textContent = `${list.length.toLocaleString()}개 기관`;
+  if (!list.length) {
+    wrap.innerHTML = `<div class="chk-empty">조건에 맞는 기관이 없습니다.</div>`;
+    return;
+  }
+  const sorted = list.slice().sort((a, b) => (a.g || '').localeCompare(b.g || '') || a.n.localeCompare(b.n));
+  let html = '<table class="chk-table"><tr><th>기관명</th><th>구분</th><th>시도</th><th>시군구</th><th>검진유형</th></tr>';
+  sorted.forEach(r => {
+    const badges = CHK_TYPES.filter(t => r.types && r.types[t]).map(t => `<span class="chk-badge">${t}</span>`).join('');
+    const sidoShort = r.s === '서울특별시' ? '서울' : r.s === '경기도' ? '경기' : r.s === '인천광역시' ? '인천' : r.s;
+    html += `<tr><td>${r.n}</td><td>${r.k || ''}</td><td>${sidoShort}</td><td>${r.g || ''}</td><td>${badges}</td></tr>`;
+  });
+  html += '</table>';
+  wrap.innerHTML = html;
+}
+
+// CSV(EUC-KR/CP949 인코딩) 파싱 → 수도권만 필터 → checkup_centers.json 생성 (지오코딩 불필요, 즉시 처리)
+async function processChkCsv() {
+  const fileInput = document.getElementById('chk-file');
+  if (!fileInput.files || !fileInput.files[0]) { alert('CSV 파일을 먼저 선택해주세요.'); return; }
+  const buf = await fileInput.files[0].arrayBuffer();
+  let text;
+  try {
+    text = new TextDecoder('euc-kr').decode(buf);
+  } catch (e) {
+    text = new TextDecoder('utf-8').decode(buf);
+  }
+  const wb = XLSX.read(text, { type: 'string' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+  const head = rows[0].map(x => String(x || '').trim());
+  const idxName = head.findIndex(h => h.includes('검진기관명') || h === '기관명');
+  const idxKind = head.findIndex(h => h.includes('병원구분') || h.includes('구분'));
+  const idxSido = head.findIndex(h => h.includes('시도'));
+  const idxSgg = head.findIndex(h => h.includes('시군구'));
+  const typeIdx = {};
+  CHK_TYPES.forEach(t => { typeIdx[t] = head.findIndex(h => h === t); });
+
+  const METRO = ['서울특별시', '경기도', '인천광역시'];
+  const out = [];
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || !row[idxName]) continue;
+    const sido = String(row[idxSido] || '').trim();
+    if (!METRO.includes(sido)) continue;
+    const types = {};
+    CHK_TYPES.forEach(t => {
+      const idx = typeIdx[t];
+      if (idx >= 0) {
+        const v = row[idx];
+        if (v !== undefined && v !== null && String(v).trim() !== '') types[t] = String(v).trim();
+      }
+    });
+    out.push({
+      n: String(row[idxName]).trim(),
+      k: idxKind >= 0 ? String(row[idxKind] || '').trim() : '',
+      s: sido,
+      g: idxSgg >= 0 ? String(row[idxSgg] || '').trim() : '',
+      types
+    });
+  }
+
+  const now = new Date();
+  const updated = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+  chkResult = { updated, r: out };
+  CHK = chkResult;
+  document.getElementById('chk-dl-json').style.display = 'inline-block';
+  renderChkList();
+  alert(`처리 완료!\n\n· 수도권 ${out.length}개 기관 반영\n\n"checkup_centers.json 다운로드"를 눌러 저장 후 깃허브에 올려주세요.`);
+}
+
+function downloadChkJSON() {
+  if (!chkResult) { alert('먼저 CSV를 처리해주세요.'); return; }
+  const json = JSON.stringify(chkResult);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'checkup_centers.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// 건강검진기관 엑셀 다운로드 (전체/서울/경기/인천 4개 시트, 인쇄용 가로)
+function downloadChkExcel() {
+  if (typeof XLSX === 'undefined') { alert('엑셀 모듈을 불러오지 못했습니다.'); return; }
+  if (!CHK || !CHK.r || !CHK.r.length) { alert('건강검진기관 데이터가 아직 없습니다.'); return; }
+
+  const scopes = [
+    { name: '전체', test: () => true },
+    { name: '서울', test: r => r.s === '서울특별시' },
+    { name: '경기', test: r => r.s === '경기도' },
+    { name: '인천', test: r => r.s === '인천광역시' }
+  ];
+  const wb = XLSX.utils.book_new();
+  const header = ['No', '기관명', '구분', '시도', '시군구', ...CHK_TYPES];
+
+  scopes.forEach(scope => {
+    const recs = CHK.r.filter(scope.test).slice().sort((a, b) => (a.g || '').localeCompare(b.g || '') || a.n.localeCompare(b.n));
+    const rows = recs.map((r, i) => [
+      i + 1, r.n, r.k || '', r.s, r.g || '',
+      ...CHK_TYPES.map(t => (r.types && r.types[t]) ? r.types[t] : '')
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws['!cols'] = [
+      { wch: 5 }, { wch: 26 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+      ...CHK_TYPES.map(() => ({ wch: 10 }))
+    ];
+    ws['!views'] = [{ state: 'frozen', ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' }];
+    ws['!pageSetup'] = { orientation: 'landscape', paperSize: 9, fitToWidth: 1, fitToHeight: 0 };
+    ws['!margins'] = { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 };
+    ws['!autofilter'] = { ref: 'A1:' + XLSX.utils.encode_col(header.length - 1) + (rows.length + 1) };
+    XLSX.utils.book_append_sheet(wb, ws, scope.name);
+  });
+
+  const today = new Date();
+  const ymd = today.getFullYear() + String(today.getMonth() + 1).padStart(2, '0') + String(today.getDate()).padStart(2, '0');
+  XLSX.writeFile(wb, `건강검진기관_${ymd}.xlsx`);
 }
 
 function downloadHiraJSON() {
