@@ -210,7 +210,7 @@ button, input, textarea { font-family: inherit; }
   <div id="chk-admin-box" class="chk-admin-box" style="display:none">
     <h3>건강검진기관 데이터 업데이트 (수도권)</h3>
     <div style="font-size:12px;color:#333;margin-bottom:8px">
-      국민건강보험공단 "검진기관별 검진유형내역" CSV를 올리면 서울·경기·인천만 자동으로 골라 반영합니다 (주소가 없는 데이터라 지도 핀 없이 목록으로만 제공돼요).
+      국민건강보험공단 "검진기관별 검진유형내역" CSV를 올리면 서울·경기·인천 중 <b>위암·대장암·간암·유방암·자궁경부암·폐암</b> 검진 중 하나라도 제공하는 기관만 골라 반영합니다 (일반/영유아/구강 검진은 제외돼요. 주소가 없는 데이터라 지도 핀 없이 목록으로만 제공돼요).
     </div>
     <input type="file" id="chk-file" accept=".csv">
     <button style="background:#1565c0;color:#fff" onclick="processChkCsv()">CSV 처리 시작</button>
@@ -792,7 +792,7 @@ async function processHiraExcel() {
    건강검진기관 (국민건강보험공단_검진기관별 검진유형내역)
    — 주소가 없는 데이터라 지도 핀 없이 "필터 가능한 목록"으로 제공
    ═══════════════════════════════════════════════════════════ */
-const CHK_TYPES = ['일반', '영유아', '구강', '위암', '대장암', '간암', '유방암', '자궁경부암', '폐암'];
+const CHK_TYPES = ['위암', '대장암', '간암', '유방암', '자궁경부암', '폐암']; // 일반/영유아/구강 제외, 암검진 6종만
 let CHK = null;           // {updated, r:[{n,k,s,g,types:{일반:'내원',...}}]}
 let chkResult = null;     // 관리자 CSV 처리 결과(다운로드 대기중인 JSON)
 let chkRegion = 'all';    // 'all' | '서울특별시' | '경기도' | '인천광역시'
@@ -913,6 +913,7 @@ async function processChkCsv() {
         if (v !== undefined && v !== null && String(v).trim() !== '') types[t] = String(v).trim();
       }
     });
+    if (Object.keys(types).length === 0) continue; // 위암~폐암 중 하나도 없으면 제외
     out.push({
       n: String(row[idxName]).trim(),
       k: idxKind >= 0 ? String(row[idxKind] || '').trim() : '',
@@ -922,13 +923,15 @@ async function processChkCsv() {
     });
   }
 
+  out.sort((a, b) => (a.g || '').localeCompare(b.g || '') || a.n.localeCompare(b.n)); // 시군구→이름순 정렬
+
   const now = new Date();
   const updated = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
   chkResult = { updated, r: out };
   CHK = chkResult;
   document.getElementById('chk-dl-json').style.display = 'inline-block';
   renderChkList();
-  alert(`처리 완료!\n\n· 수도권 ${out.length}개 기관 반영\n\n"checkup_centers.json 다운로드"를 눌러 저장 후 깃허브에 올려주세요.`);
+  alert(`처리 완료!\n\n· 위암~폐암 중 하나라도 제공하는 수도권 ${out.length}개 기관 반영\n\n"checkup_centers.json 다운로드"를 눌러 저장 후 깃허브에 올려주세요.`);
 }
 
 function downloadChkJSON() {
@@ -943,41 +946,80 @@ function downloadChkJSON() {
   URL.revokeObjectURL(url);
 }
 
-// 건강검진기관 엑셀 다운로드 (전체/서울/경기/인천 4개 시트, 인쇄용 가로)
-function downloadChkExcel() {
-  if (typeof XLSX === 'undefined') { alert('엑셀 모듈을 불러오지 못했습니다.'); return; }
+// 건강검진기관 엑셀 다운로드 (전체/서울/경기/인천 4개 시트, 인쇄용 가로, 중앙정렬+디자인)
+async function downloadChkExcel() {
   if (!CHK || !CHK.r || !CHK.r.length) { alert('건강검진기관 데이터가 아직 없습니다.'); return; }
 
+  // SheetJS 무료판은 셀 색상/정렬 저장을 지원 안 해서 ExcelJS로 생성
+  if (!window.ExcelJS) {
+    await new Promise(res => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+      s.onload = res; document.head.appendChild(s);
+    });
+  }
+
+  const wb = new ExcelJS.Workbook();
   const scopes = [
     { name: '전체', test: () => true },
     { name: '서울', test: r => r.s === '서울특별시' },
     { name: '경기', test: r => r.s === '경기도' },
     { name: '인천', test: r => r.s === '인천광역시' }
   ];
-  const wb = XLSX.utils.book_new();
   const header = ['No', '기관명', '구분', '시도', '시군구', ...CHK_TYPES];
+  const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+  const STRIPE_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F6FA' } };
+  const THIN = { style: 'thin', color: { argb: 'FFD9D9D9' } };
+  const BORDER = { top: THIN, left: THIN, bottom: THIN, right: THIN };
 
   scopes.forEach(scope => {
     const recs = CHK.r.filter(scope.test).slice().sort((a, b) => (a.g || '').localeCompare(b.g || '') || a.n.localeCompare(b.n));
-    const rows = recs.map((r, i) => [
-      i + 1, r.n, r.k || '', r.s, r.g || '',
-      ...CHK_TYPES.map(t => (r.types && r.types[t]) ? r.types[t] : '')
-    ]);
-    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-    ws['!cols'] = [
-      { wch: 5 }, { wch: 26 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-      ...CHK_TYPES.map(() => ({ wch: 10 }))
+    const ws = wb.addWorksheet(scope.name, {
+      views: [{ state: 'frozen', ySplit: 1 }],
+      pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+        margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } }
+    });
+    ws.columns = [
+      { width: 5 }, { width: 26 }, { width: 10 }, { width: 10 }, { width: 10 },
+      ...CHK_TYPES.map(() => ({ width: 9 }))
     ];
-    ws['!views'] = [{ state: 'frozen', ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' }];
-    ws['!pageSetup'] = { orientation: 'landscape', paperSize: 9, fitToWidth: 1, fitToHeight: 0 };
-    ws['!margins'] = { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 };
-    ws['!autofilter'] = { ref: 'A1:' + XLSX.utils.encode_col(header.length - 1) + (rows.length + 1) };
-    XLSX.utils.book_append_sheet(wb, ws, scope.name);
+
+    const headRow = ws.addRow(header);
+    headRow.eachCell(c => {
+      c.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      c.fill = HEADER_FILL;
+      c.alignment = { horizontal: 'center', vertical: 'middle' };
+      c.border = BORDER;
+    });
+    headRow.height = 20;
+
+    recs.forEach((r, i) => {
+      const row = ws.addRow([
+        i + 1, r.n, r.k || '', r.s, r.g || '',
+        ...CHK_TYPES.map(t => (r.types && r.types[t]) ? r.types[t] : '')
+      ]);
+      row.eachCell((c, colNum) => {
+        c.font = { name: 'Arial', size: 10 };
+        c.alignment = { horizontal: 'center', vertical: 'middle' }; // 전체 중앙정렬
+        c.border = BORDER;
+        if (colNum === 2) c.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }; // 기관명만 왼쪽정렬(가독성)
+        if (i % 2 === 1) c.fill = STRIPE_FILL; // 한 줄씩 은은한 줄무늬
+        if (colNum >= 6 && c.value) c.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF1F7A3D' } }; // 검진 제공 항목 강조
+      });
+    });
+
+    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: header.length } };
   });
 
   const today = new Date();
   const ymd = today.getFullYear() + String(today.getMonth() + 1).padStart(2, '0') + String(today.getDate()).padStart(2, '0');
-  XLSX.writeFile(wb, `건강검진기관_${ymd}.xlsx`);
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `건강검진기관_${ymd}.xlsx`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function downloadHiraJSON() {
